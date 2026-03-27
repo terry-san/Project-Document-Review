@@ -1,5 +1,5 @@
 {
-  "name": "NPI樣品統計",
+  "name": "Project Document Review",
   "description": "A web application for administrators to upload documents and for users to review them based on specific functions, regions, and models.",
   "requestFramePermissions": []
 }
