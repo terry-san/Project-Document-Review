@@ -21,6 +21,7 @@ export interface Review {
   userId: string;
   userEmail: string;
   status: 'agree' | 'disagree';
+  comment?: string;
   timestamp: any; // Firestore Timestamp
   function: string;
 }

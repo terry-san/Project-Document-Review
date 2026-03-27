@@ -713,13 +713,23 @@ function DocumentList({ filterFunction, modelSearch = '', user, isAdmin = false 
 function DocumentCard({ doc: d, user, isAdmin, reviews, selectedFunction }: { doc: Document; user?: User; isAdmin: boolean; reviews: Review[]; selectedFunction?: string; key?: string }) {
   const userReview = user ? reviews.find(r => r.userId === user.uid) : null;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [comment, setComment] = useState(userReview?.comment || '');
+  const [error, setError] = useState('');
 
   const handleReview = async (status: 'agree' | 'disagree') => {
     if (!user || !selectedFunction) return;
+    setError('');
+    
+    if (status === 'disagree' && !comment.trim()) {
+      setError('Selecting “Disagree” requires a comment.');
+      return;
+    }
+
     try {
       if (userReview) {
         await updateDoc(doc(db, 'reviews', userReview.id), {
           status,
+          comment,
           function: selectedFunction,
           timestamp: serverTimestamp()
         });
@@ -729,6 +739,7 @@ function DocumentCard({ doc: d, user, isAdmin, reviews, selectedFunction }: { do
           userId: user.uid,
           userEmail: user.email,
           status,
+          comment,
           function: selectedFunction,
           timestamp: serverTimestamp()
         });
@@ -817,6 +828,25 @@ function DocumentCard({ doc: d, user, isAdmin, reviews, selectedFunction }: { do
           </div>
         )}
 
+        {!isAdmin && user && (
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Comment {userReview?.status === 'disagree' && <span className="text-red-500">*</span>}</label>
+            <textarea
+              value={comment}
+              onChange={(e) => {
+                setComment(e.target.value);
+                if (e.target.value.trim()) setError('');
+              }}
+              placeholder="Enter your comment here..."
+              className={cn(
+                "w-full p-3 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 transition-all min-h-[80px] resize-none",
+                error ? "border-red-300 ring-2 ring-red-50" : "border-gray-200"
+              )}
+            />
+            {error && <p className="text-[10px] text-red-500 font-bold">{error}</p>}
+          </div>
+        )}
+
         <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
           <span>Results</span>
           <div className="flex gap-3">
@@ -849,7 +879,8 @@ function ResultsView({ isAdmin = false }: { isAdmin?: boolean }) {
       (docObj?.title || '').toLowerCase().includes(searchLower) ||
       (docObj?.model || '').toLowerCase().includes(searchLower) ||
       r.function.toLowerCase().includes(searchLower) ||
-      r.status.toLowerCase().includes(searchLower)
+      r.status.toLowerCase().includes(searchLower) ||
+      (r.comment || '').toLowerCase().includes(searchLower)
     );
   }).sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
@@ -863,6 +894,7 @@ function ResultsView({ isAdmin = false }: { isAdmin?: boolean }) {
         Document: docObj?.title || 'Deleted Document',
         Function: r.function,
         Status: r.status,
+        Comment: r.comment || '',
         Date: r.timestamp?.toDate().toLocaleDateString()
       };
     });
@@ -998,6 +1030,7 @@ function ResultsView({ isAdmin = false }: { isAdmin?: boolean }) {
                 <th className="px-6 py-4">Document</th>
                 <th className="px-6 py-4">Function</th>
                 <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Comment</th>
                 <th className="px-6 py-4">Date</th>
               </tr>
             </thead>
@@ -1035,6 +1068,9 @@ function ResultsView({ isAdmin = false }: { isAdmin?: boolean }) {
                           <XCircle className="w-3 h-3" /> Disagree
                         </span>
                       )}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600 max-w-xs truncate" title={r.comment}>
+                      {r.comment || '-'}
                     </td>
                     <td className="px-6 py-4 text-gray-400 text-xs">
                       {r.timestamp?.toDate().toLocaleDateString()}
