@@ -23,6 +23,7 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  updateProfile,
   User
 } from 'firebase/auth';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -46,7 +47,8 @@ import {
   Lock,
   UserPlus,
   LogIn,
-  Search
+  Search,
+  User as UserIcon
 } from 'lucide-react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { Config, Document, Review } from './types';
@@ -142,6 +144,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'user' | 'admin' | 'results'>('user');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
@@ -183,7 +186,10 @@ function AppContent() {
     setAuthError('');
     try {
       if (authMode === 'signup') {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        if (name) {
+          await updateProfile(userCredential.user, { displayName: name });
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -216,6 +222,22 @@ function AppContent() {
           </p>
 
           <form onSubmit={handleEmailAuth} className="space-y-4 mb-6">
+            {authMode === 'signup' && (
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Full Name</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 transition-all"
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+              </div>
+            )}
             <div className="space-y-1">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
               <div className="relative">
@@ -329,7 +351,7 @@ function AppContent() {
 
           <div className="flex items-center gap-4">
             <div className="hidden sm:block text-right">
-              <div className="text-xs font-medium text-gray-900">{user.displayName}</div>
+              <div className="text-xs font-bold text-gray-900">{user.displayName || 'User'}</div>
               <div className="text-[10px] text-gray-500">{user.email}</div>
             </div>
             <button 
