@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "Config": {
+      "title": "Admin Configuration",
+      "description": "Stores global options for regions, models, and functions.",
+      "type": "object",
+      "properties": {
+        "regions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of available regions."
+        },
+        "models": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of available models."
+        },
+        "functions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of available functions."
+        }
+      },
+      "required": ["regions", "models", "functions"]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "A document uploaded for review.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Display title of the document." },
+        "fileUrl": { "type": "string", "description": "URL to download the file." },
+        "region": { "type": "string", "description": "Associated region." },
+        "model": { "type": "string", "description": "Associated model." },
+        "function": { "type": "string", "description": "Associated function." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Upload timestamp." },
+        "authorUid": { "type": "string", "description": "UID of the uploader." }
+      },
+      "required": ["title", "fileUrl", "region", "model", "function", "createdAt", "authorUid"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A user's review of a document.",
+      "type": "object",
+      "properties": {
+        "documentId": { "type": "string", "description": "ID of the document being reviewed." },
+        "userId": { "type": "string", "description": "UID of the reviewer." },
+        "userEmail": { "type": "string", "description": "Email of the reviewer." },
+        "status": { "type": "string", "enum": ["agree", "disagree"], "description": "Review outcome." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the review was submitted." },
+        "function": { "type": "string", "description": "The function context for this review." }
+      },
+      "required": ["documentId", "userId", "userEmail", "status", "timestamp", "function"]
+    }
+  },
+  "firestore": {
+    "configs/main": {
+      "schema": "Config",
+      "description": "Global admin settings."
+    },
+    "documents/{documentId}": {
+      "schema": "Document",
+      "description": "Collection of documents to be reviewed."
+    },
+    "reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Collection of user reviews."
+    }
+  }
+}

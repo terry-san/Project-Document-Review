@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: configs
+    // Document ID: main
+    // Fields:
+    //   - regions: list (required)
+    //   - models: list (required)
+    //   - functions: list (required)
+    //
+    // Collection: documents
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string (required)
+    //   - fileUrl: string (required)
+    //   - region: string (required)
+    //   - model: string (required)
+    //   - function: string (required)
+    //   - createdAt: timestamp (required)
+    //   - authorUid: string (required)
+    //
+    // Collection: reviews
+    // Document ID: auto-generated
+    // Fields:
+    //   - documentId: string (required)
+    //   - userId: string (required)
+    //   - userEmail: string (required)
+    //   - status: string (required, enum: ['agree', 'disagree'])
+    //   - timestamp: timestamp (required)
+    //   - function: string (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == "kwang0923@gmail.com";
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidConfig(data) {
+      return data.regions is list && data.models is list && data.functions is list;
+    }
+
+    function isValidDocument(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.fileUrl is string && data.fileUrl.size() > 0 &&
+             data.region is string && data.model is string &&
+             data.createdAt is timestamp &&
+             (data.authorUid == request.auth.uid || isAdmin());
+    }
+
+    function isValidReview(data) {
+      return data.documentId is string &&
+             data.userId == request.auth.uid &&
+             data.userEmail is string &&
+             data.status in ['agree', 'disagree'] &&
+             data.timestamp is timestamp &&
+             data.function is string;
+    }
+
+    // Rules
+    match /configs/main {
+      allow read: if true;
+      allow write: if isAdmin() && isValidConfig(request.resource.data);
+    }
+
+    match /documents/{documentId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidDocument(request.resource.data);
+      allow update: if isAdmin() && isValidDocument(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidReview(request.resource.data);
+      allow update: if isOwner(resource.data.userId) && isValidReview(request.resource.data) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) || isAdmin();
+    }
+  }
+}
