@@ -1,20 +1,30 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Project Document Review Application
 
-# Run and deploy your AI Studio app
+This application is built with React, Vite, and Firebase. It allows users to review documents, vote (Agree/Disagree), and provide comments.
 
-This contains everything you need to run your app locally.
+## Deployment to GitHub Pages
 
-View your app in AI Studio: https://ai.studio/apps/9faddf92-ce04-4c06-afaf-2c0ded4c4dbd
+To ensure the application works correctly on GitHub Pages:
 
-## Run Locally
+1.  **Vite Configuration**: `vite.config.ts` has `base: './'` to ensure relative paths for assets.
+2.  **Firebase Configuration**: The `firebase-applet-config.json` is included in the build.
+3.  **Nojekyll**: A `.nojekyll` file is included in the `public/` directory to bypass Jekyll processing.
 
-**Prerequisites:**  Node.js
+### Manual Deployment to GitHub Pages
 
+To ensure the application works correctly on GitHub Pages:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1.  **Vite Configuration**: `vite.config.ts` has `base: './'` to ensure relative paths for assets.
+2.  **Firebase Configuration**: The `firebase-applet-config.json` is included in the build.
+3.  **Nojekyll**: A `.nojekyll` file is included in the `public/` directory to bypass Jekyll processing.
+
+To deploy manually:
+1.  Run `npm run build`.
+2.  Push the contents of the `dist` folder to your `gh-pages` branch.
+3.  In your GitHub repository **Settings > Pages**, set the source to the `gh-pages` branch and the `/ (root)` folder.
+
+## Local Development
+
+1.  `npm install`
+2.  `npm run dev`
+3.  Open `http://localhost:3000`
