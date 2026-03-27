@@ -98,6 +98,36 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 const ADMIN_EMAIL = "kwang0923@gmail.com";
 
+const getBadgeStyle = (text: string, type: string = 'default') => {
+  const t = type.toLowerCase();
+  let start = 0;
+  let range = 60;
+  
+  if (t.includes('region')) {
+    start = 190; // Cold: Cyan to Purple range (190-290)
+    range = 100;
+  } else if (t.includes('model')) {
+    start = 320; // Warm: Pink to Orange range (320-60)
+    range = 100;
+  } else {
+    start = 80; // Neutral: Green/Slate range (80-160)
+    range = 80;
+  }
+
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = text.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const hue = (start + (Math.abs(hash) % range)) % 360;
+  
+  return {
+    backgroundColor: `hsl(${hue}, 80%, 96%)`,
+    color: `hsl(${hue}, 100%, 25%)`,
+    borderColor: `hsl(${hue}, 80%, 90%)`,
+  };
+};
+
 export default function App() {
   return (
     <ErrorBoundary>
@@ -590,9 +620,13 @@ function ConfigSection({ title, items, value, onChange, onAdd, onRemove }: any) 
       </div>
       <div className="flex flex-wrap gap-2">
         {items.map((item: string) => (
-          <span key={item} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium">
+          <span 
+            key={item} 
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border transition-all"
+            style={getBadgeStyle(item, title)}
+          >
             {item}
-            <button onClick={() => onRemove(item)} className="text-gray-400 hover:text-red-500">
+            <button onClick={() => onRemove(item)} className="hover:text-red-500 opacity-50 hover:opacity-100 transition-opacity">
               <Trash2 className="w-3 h-3" />
             </button>
           </span>
@@ -654,14 +688,17 @@ function UserPanel({ user }: { user: User }) {
             <select 
               value={selectedFunction} 
               onChange={e => setSelectedFunction(e.target.value)}
-              className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 transition-all text-sm pr-10 font-medium"
+              className={cn(
+                "w-full appearance-none px-4 py-3 bg-white border rounded-xl shadow-sm focus:outline-none focus:ring-2 transition-all text-sm pr-10 font-bold",
+                selectedFunction ? "border-gray-200 focus:ring-gray-900/10" : "border-red-500 ring-2 ring-red-50 focus:ring-red-200 animate-pulse"
+              )}
             >
               <option value="" disabled>Select your function</option>
               {config?.functions.map(f => (
                 <option key={f} value={f}>{f}</option>
               ))}
             </select>
-            <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Filter className={cn("absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none", selectedFunction ? "text-gray-400" : "text-red-500")} />
           </div>
         </div>
       </div>
@@ -762,7 +799,7 @@ function DocumentCard({ doc: d, user, isAdmin, reviews, selectedFunction }: { do
   const disagreeCount = reviews.filter(r => r.status === 'disagree').length;
 
   return (
-    <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+    <div className="bg-white p-6 rounded-3xl border-2 border-gray-100 shadow-lg hover:shadow-2xl hover:border-gray-300 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
       <ConfirmModal 
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -771,7 +808,10 @@ function DocumentCard({ doc: d, user, isAdmin, reviews, selectedFunction }: { do
         message={`您確定要刪除文件 "${d.title}" 嗎？此操作無法撤銷。`}
       />
       <div className="flex justify-between items-start mb-4">
-        <div className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-[10px] font-bold uppercase tracking-wider">
+        <div 
+          className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border"
+          style={getBadgeStyle(d.region, 'region')}
+        >
           {d.region}
         </div>
         {isAdmin && (
@@ -784,8 +824,14 @@ function DocumentCard({ doc: d, user, isAdmin, reviews, selectedFunction }: { do
       <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{d.title}</h3>
       
       <div className="flex flex-wrap gap-2 mb-6">
-        <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">{d.region}</span>
-        <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-full border border-gray-100">{d.model}</span>
+        <span 
+          className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border"
+          style={getBadgeStyle(d.region, 'region')}
+        >{d.region}</span>
+        <span 
+          className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border"
+          style={getBadgeStyle(d.model, 'model')}
+        >{d.model}</span>
       </div>
 
       <div className="mt-auto space-y-4">
@@ -1051,7 +1097,18 @@ function ResultsView({ isAdmin = false }: { isAdmin?: boolean }) {
                       </td>
                     )}
                     <td className="px-6 py-4 font-medium text-gray-900">{r.userEmail}</td>
-                    <td className="px-6 py-4 text-gray-500">{docObj?.model || 'N/A'}</td>
+                    <td className="px-6 py-4">
+                      {docObj ? (
+                        <span 
+                          className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border"
+                          style={getBadgeStyle(docObj.model, 'model')}
+                        >
+                          {docObj.model}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 text-xs italic">N/A</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-gray-500">{docObj?.title || 'Deleted Document'}</td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md text-[10px] font-bold uppercase">
